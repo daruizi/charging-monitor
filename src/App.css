@@ -1,0 +1,5 @@
+/* 清空，使用 index.css 中的全局样式 */
+#root {
+  width: 100%;
+  height: 100%;
+}
