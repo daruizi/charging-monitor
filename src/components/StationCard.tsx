@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import type { EquipmentData } from '../types';
 import { StationStatus, STATUS_CONFIG } from '../types';
 import { parseStatus, formatPower, formatEnergy, formatTime, calculateStats } from '../utils/stationUtils';
@@ -141,5 +141,4 @@ const StationCard: React.FC<StationCardProps> = ({
     </div>
   );
 };
-
-export default StationCard;
+export default React.memo(StationCard);

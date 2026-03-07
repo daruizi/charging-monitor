@@ -316,6 +316,14 @@ MIT License - 可以自由使用和修改
 
 ## 版本信息
 
+**园区充电桩监控系统 v2.1 (性能优化版)**
+
+- 提取 `RefreshCountdown` 组件，彻底隔离倒计时状态，避免全局 DOM 每秒重绘
+- 引入 `React.memo` 阻断非活跃 `StationCard` 的无关渲染
+- 引入 `useMemo` 缓存派生出的总统计数据，降低 CPU 消耗
+- 修正 `stationUtils` 数据解析器中的未知状态 Fallback，避免误报“可用”
+- 优化了项目 HTML 结构和 SEO Metadata
+
 **园区充电桩监控系统 v2.0**
 
 - 使用 React 19 + TypeScript 5.9 重构

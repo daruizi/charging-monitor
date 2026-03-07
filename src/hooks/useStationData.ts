@@ -8,7 +8,6 @@ const REFRESH_INTERVAL_SECONDS = REFRESH_INTERVAL / 1000;
 
 export const useStationData = (): {
   stationData: StationData[];
-  countdown: number;
   refresh: () => Promise<void>;
   isLoading: boolean;
 } => {
@@ -22,7 +21,6 @@ export const useStationData = (): {
       lastUpdate: null,
     }))
   );
-  const [countdown, setCountdown] = useState<number>(REFRESH_INTERVAL_SECONDS);
 
   const fetchData = useCallback(async () => {
     const results = await Promise.all(
@@ -54,7 +52,6 @@ export const useStationData = (): {
     );
 
     setStationData(results);
-    setCountdown(REFRESH_INTERVAL_SECONDS);
   }, []);
 
   useEffect(() => {
@@ -63,14 +60,7 @@ export const useStationData = (): {
     return () => clearInterval(timer);
   }, [fetchData]);
 
-  useEffect(() => {
-    const countdownTimer = setInterval(() => {
-      setCountdown((prev) => (prev <= 1 ? REFRESH_INTERVAL_SECONDS : prev - 1));
-    }, 1000);
-    return () => clearInterval(countdownTimer);
-  }, []);
-
   const isLoading = stationData.some((s) => s.loading);
 
-  return { stationData, countdown, refresh: fetchData, isLoading };
+  return { stationData, refresh: fetchData, isLoading };
 };

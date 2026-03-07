@@ -1,21 +1,24 @@
+import { useMemo } from 'react';
 import { STATIONS, REFRESH_INTERVAL } from './config';
 import type { StationStats } from './types';
 import StationCard from './components/StationCard';
+import RefreshCountdown from './components/RefreshCountdown';
 import { useStationData } from './hooks/useStationData';
 import { calculateTotalStats, formatTime, getEarliestUpdateTime } from './utils/stationUtils';
 import './App.css';
 
 function App() {
-  const { stationData, countdown, refresh, isLoading } = useStationData();
+  const { stationData, refresh, isLoading } = useStationData();
 
-  // 计算总统计
-  const totalStats: StationStats = calculateTotalStats(stationData.map((s) => s.stats));
+  // 计算总统计 - 使用 useMemo 缓存
+  const totalStats: StationStats = useMemo(() => {
+    return calculateTotalStats(stationData.map((s) => s.stats));
+  }, [stationData]);
 
-  // 获取最早更新时间
-  const lastUpdateTime = getEarliestUpdateTime(stationData);
-
-  // 计算进度条百分比
-  const progressPercent = (countdown / (REFRESH_INTERVAL / 1000)) * 100;
+  // 获取最早更新时间 - 使用 useMemo 缓存
+  const lastUpdateTime = useMemo(() => {
+    return getEarliestUpdateTime(stationData);
+  }, [stationData]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -61,40 +64,8 @@ function App() {
           </div>
         </div>
 
-        {/* 刷新控制栏 */}
-        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="text-gray-600">
-                <span className="text-gray-400">下次刷新:</span>
-                <span className="font-bold text-blue-600 ml-2 text-lg">{countdown}秒</span>
-              </div>
-              <div className="w-48 h-3 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000"
-                  style={{ width: `${progressPercent}%` }}
-                ></div>
-              </div>
-            </div>
-            <button
-              onClick={refresh}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg disabled:shadow-none"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>刷新中...</span>
-                </>
-              ) : (
-                <>
-                  <span>🔄</span>
-                  <span>立即刷新</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+        {/* 刷新控制栏 - 使用独立组件隔离更新状态 */}
+        <RefreshCountdown onRefresh={refresh} isLoading={isLoading} />
 
         {/* 各充电站卡片 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -113,6 +84,12 @@ function App() {
       </main>
 
       {/* 页脚 */}
+      <footer className="bg-gray-800 text-gray-400 text-sm text-center py-4 mt-8">
+        <p>数据每 {REFRESH_INTERVAL / 1000} 秒自动更新 | 园区充电桩监控系统 v2.0</p>
+      </footer>
+    </div>
+  );
+}
       <footer className="bg-gray-800 text-gray-400 text-sm text-center py-4 mt-8">
         <p>数据每 {REFRESH_INTERVAL / 1000} 秒自动更新 | 园区充电桩监控系统 v2.0</p>
       </footer>

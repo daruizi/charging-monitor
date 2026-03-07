@@ -182,7 +182,7 @@ export const calculateStats = (piles: EquipmentData[]): StationStats => {
         stats.offline++;
         break;
       default:
-        stats.idle++;
+        stats.offline++;
         break;
     }
   }
