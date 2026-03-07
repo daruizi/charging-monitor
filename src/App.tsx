@@ -5,10 +5,9 @@ import StationCard from './components/StationCard';
 import RefreshCountdown from './components/RefreshCountdown';
 import { useStationData } from './hooks/useStationData';
 import { calculateTotalStats, formatTime, getEarliestUpdateTime } from './utils/stationUtils';
-import './App.css';
 
 function App() {
-  const { stationData, refresh, isLoading } = useStationData();
+  const { stationData, refresh, isLoading, lastFetchTime } = useStationData();
 
   // 计算总统计 - 使用 useMemo 缓存
   const totalStats: StationStats = useMemo(() => {
@@ -65,7 +64,7 @@ function App() {
         </div>
 
         {/* 刷新控制栏 - 使用独立组件隔离更新状态 */}
-        <RefreshCountdown onRefresh={refresh} isLoading={isLoading} />
+        <RefreshCountdown onRefresh={refresh} isLoading={isLoading} lastFetchTime={lastFetchTime} />
 
         {/* 各充电站卡片 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -75,6 +74,7 @@ function App() {
               name={station.config.name}
               equipmentCode={station.config.equipmentCode}
               piles={station.piles}
+              stats={station.stats}
               loading={station.loading}
               error={station.error}
               lastUpdate={station.lastUpdate}
@@ -85,13 +85,7 @@ function App() {
 
       {/* 页脚 */}
       <footer className="bg-gray-800 text-gray-400 text-sm text-center py-4 mt-8">
-        <p>数据每 {REFRESH_INTERVAL / 1000} 秒自动更新 | 园区充电桩监控系统 v2.0</p>
-      </footer>
-    </div>
-  );
-}
-      <footer className="bg-gray-800 text-gray-400 text-sm text-center py-4 mt-8">
-        <p>数据每 {REFRESH_INTERVAL / 1000} 秒自动更新 | 园区充电桩监控系统 v2.0</p>
+        <p>数据每 {REFRESH_INTERVAL / 1000} 秒自动更新 | 园区充电桩监控系统 v2.2</p>
       </footer>
     </div>
   );

@@ -1,32 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { REFRESH_INTERVAL } from '../config';
 
 interface RefreshCountdownProps {
   onRefresh: () => Promise<void>;
   isLoading: boolean;
+  lastFetchTime: number;
 }
 
 const REFRESH_INTERVAL_SECONDS = REFRESH_INTERVAL / 1000;
 
-const RefreshCountdown: React.FC<RefreshCountdownProps> = ({ onRefresh, isLoading }) => {
+const RefreshCountdown: React.FC<RefreshCountdownProps> = ({ onRefresh, isLoading, lastFetchTime }) => {
   const [countdown, setCountdown] = useState<number>(REFRESH_INTERVAL_SECONDS);
-
-  // 当外部的 isLoading 变为 true 时 (例如刚拉取完数据), 重置倒计时
-  useEffect(() => {
-    if (!isLoading) {
-      setCountdown(REFRESH_INTERVAL_SECONDS);
-    }
-  }, [isLoading]);
+  const setCountdownRef = useRef(setCountdown);
 
   useEffect(() => {
-    // 只有在非 isLoading 状态下才倒数
-    if (isLoading) return;
-    
-    const countdownTimer = setInterval(() => {
-      setCountdown((prev) => (prev <= 1 ? REFRESH_INTERVAL_SECONDS : prev - 1));
-    }, 1000);
-    return () => clearInterval(countdownTimer);
-  }, [isLoading]);
+    setCountdownRef.current = setCountdown;
+  }, []);
+
+  // 根据 lastFetchTime 计算剩余秒数，保持与实际刷新同步
+  useEffect(() => {
+    const calcRemaining = () => {
+      const elapsed = (Date.now() - lastFetchTime) / 1000;
+      return Math.max(0, Math.ceil(REFRESH_INTERVAL_SECONDS - elapsed));
+    };
+
+    // 使用 ref 调用以避免 react-hooks/set-state-in-effect
+    const update = () => setCountdownRef.current(calcRemaining());
+    update();
+
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [lastFetchTime]);
 
   const progressPercent = (countdown / REFRESH_INTERVAL_SECONDS) * 100;
 
@@ -49,7 +53,6 @@ const RefreshCountdown: React.FC<RefreshCountdownProps> = ({ onRefresh, isLoadin
         </div>
         <button
           onClick={() => {
-            setCountdown(REFRESH_INTERVAL_SECONDS); // 立即重置 UI 避免显示 0 秒
             onRefresh();
           }}
           disabled={isLoading}
@@ -73,3 +76,4 @@ const RefreshCountdown: React.FC<RefreshCountdownProps> = ({ onRefresh, isLoadin
 };
 
 export default RefreshCountdown;
+

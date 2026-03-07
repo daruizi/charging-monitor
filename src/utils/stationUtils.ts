@@ -151,11 +151,16 @@ export const extractPileList = (responseData: unknown): EquipmentData[] => {
     piles = responseData as EquipmentData[];
   }
 
-  // 确保每个桩都有编号
-  piles = piles.map((item, index) => ({
-    ...item,
-    pileNumber: item.pileNumber ?? item.gunNumber ?? item.socketNumber ?? item.pileId ?? item.gunId ?? item.socketId ?? (index + 1),
-  }));
+  // 确保每个桩都有编号，并缓存状态解析结果
+  piles = piles.map((item, index) => {
+    const enriched = {
+      ...item,
+      pileNumber: item.pileNumber ?? item.gunNumber ?? item.socketNumber ?? item.pileId ?? item.gunId ?? item.socketId ?? (index + 1),
+    };
+    // 缓存 parseStatus 结果，避免重复解析
+    (enriched as Record<string, unknown>)._parsedStatus = parseStatus(enriched);
+    return enriched;
+  });
 
   return piles;
 };
@@ -167,7 +172,7 @@ export const calculateStats = (piles: EquipmentData[]): StationStats => {
   const stats: StationStats = { total: piles.length, idle: 0, charging: 0, error: 0, offline: 0 };
 
   for (const eq of piles) {
-    const status = parseStatus(eq);
+    const status = ((eq as Record<string, unknown>)._parsedStatus as StationStatusType | undefined) ?? parseStatus(eq);
     switch (status) {
       case StationStatus.IDLE:
         stats.idle++;

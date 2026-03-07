@@ -80,7 +80,9 @@ charging-monitor/
 │   │   └── api.ts              # 负责从服务器获取数据
 │   │
 │   ├── components/             # 组件文件夹
-│   │   └── StationCard.tsx     # 充电站卡片组件（显示单个充电站）
+│   │   ├── StationCard.tsx     # 充电站卡片组件（显示单个充电站）
+│   │   ├── RefreshCountdown.tsx # 刷新倒计时组件（独立隔离更新状态）
+│   │   └── ErrorBoundary.tsx   # 错误边界组件（防止白屏崩溃）
 │   │
 │   ├── hooks/                  # 自定义 Hook 文件夹
 │   │   └── useStationData.ts   # 管理数据获取和自动刷新
@@ -92,7 +94,6 @@ charging-monitor/
 │   │   └── stationUtils.ts     # 各种工具函数（格式化、计算等）
 │   │
 │   ├── App.tsx                 # 主页面组件
-│   ├── App.css                 # 主页面样式
 │   ├── index.css               # 全局样式
 │   └── main.tsx                # 入口文件
 │
@@ -177,8 +178,9 @@ export const STATIONS = [
 这是一个自定义 Hook，负责：
 - 从服务器获取数据
 - 每 20 秒自动刷新
-- 管理加载状态
-- 处理错误情况
+- 管理加载状态（独立 `isLoading` 状态）
+- 处理错误情况（失败时保留上次数据）
+- 暴露 `lastFetchTime` 与倒计时同步
 
 #### 3. 状态解析 (`src/utils/stationUtils.ts`)
 
@@ -258,7 +260,6 @@ export const STATIONS = [
     id: 'station5',           // 唯一标识
     name: '新充电站',          // 显示名称
     equipmentCode: '26450XXX', // 设备编号
-    location: '位置描述'       // 位置（可选）
   },
 ];
 ```
@@ -277,12 +278,12 @@ export const REFRESH_INTERVAL = 30000; // 改为 30 秒（单位：毫秒）
 
 当前监控的充电站：
 
-| 充电站名称 | 设备编号 | 位置 |
-|-----------|---------|------|
-| A6门充电站 | 26450360 | 阿里巴巴北京朝阳科技园A6门附近 |
-| B3门充电站 | 26450315 | 阿里巴巴北京朝阳科技园B3门附近 |
-| B6门充电站 | 26450343 | 阿里巴巴北京朝阳科技园B6门附近 |
-| C8门充电站 | 26450344 | 阿里巴巴北京朝阳科技园C8门附近 |
+| 充电站名称 | 设备编号 |
+|-----------|---------|  
+| A6门充电站 | 26450360 |
+| B3门充电站 | 26450315 |
+| B6门充电站 | 26450343 |
+| C8门充电站 | 26450344 |
 
 ---
 
@@ -315,6 +316,27 @@ MIT License - 可以自由使用和修改
 ---
 
 ## 版本信息
+
+**园区充电桩监控系统 v2.2 (稳定性 & 代码质量优化版)**
+
+Bug 修复：
+- 修复 `isLoading` 状态始终为 false，刷新按钮无法显示加载态的问题
+- 修复 API 请求失败时桩位数据被清空的问题，现在会保留上次成功的数据
+- 修复倒计时与实际数据刷新存在时间漂移的问题，改为基于 `lastFetchTime` 同步
+- 移除 `useStationData` 中未使用的 `REFRESH_INTERVAL_SECONDS` 变量
+
+性能优化：
+- `StationCard` 不再重复计算 `stats`，直接复用 Hook 中的计算结果
+- 在 `extractPileList` 中缓存 `parseStatus` 结果，避免多次重复解析
+- `animate-pulse` 脉冲动画仅应用于充电中和故障状态，减少不必要的 GPU 开销
+
+代码质量：
+- 修正 `index.html` 的 `lang` 属性为 `zh-CN`
+- 合并 `App.css` 到 `index.css`，减少冗余文件
+- 使用 `STATUS_CONFIG` 集中管理卡片和徽章样式，替代冗长的三元表达式
+- 移除配置中未使用的 `location` 字段
+- 新增 `ErrorBoundary` 组件，防止渲染异常导致白屏
+- 移除冗余的 `autoprefixer` 依赖（Tailwind CSS v4 已内置）
 
 **园区充电桩监控系统 v2.1 (性能优化版)**
 

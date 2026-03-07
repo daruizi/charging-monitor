@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react';
-import type { EquipmentData } from '../types';
-import { StationStatus, STATUS_CONFIG } from '../types';
-import { parseStatus, formatPower, formatEnergy, formatTime, calculateStats } from '../utils/stationUtils';
+import React from 'react';
+import type { EquipmentData, StationStats, StationStatusType } from '../types';
+import { STATUS_CONFIG } from '../types';
+import { parseStatus, formatPower, formatEnergy, formatTime } from '../utils/stationUtils';
 
 interface StationCardProps {
   name: string;
   equipmentCode: string;
   piles: EquipmentData[];
+  stats: StationStats;
   loading: boolean;
   error: string | null;
   lastUpdate: Date | null;
@@ -16,12 +17,11 @@ const StationCard: React.FC<StationCardProps> = ({
   name,
   equipmentCode,
   piles,
+  stats,
   loading,
   error,
   lastUpdate,
 }) => {
-  const stats = useMemo(() => calculateStats(piles), [piles]);
-
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
       {/* 头部 */}
@@ -80,24 +80,16 @@ const StationCard: React.FC<StationCardProps> = ({
       {piles.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 p-4">
           {piles.map((equipment, index) => {
-            const status = parseStatus(equipment);
+            const status: StationStatusType = ((equipment as Record<string, unknown>)._parsedStatus as StationStatusType | undefined) ?? parseStatus(equipment);
             const config = STATUS_CONFIG[status];
 
             return (
               <div
                 key={equipment.pileNumber || equipment.pileId || index}
-                className={`relative rounded-lg border-2 p-3 transition-all duration-200 hover:shadow-md ${
-                  status === StationStatus.CHARGING
-                    ? 'bg-red-50 border-red-300'
-                    : status === StationStatus.ERROR
-                    ? 'bg-yellow-50 border-yellow-300'
-                    : status === StationStatus.OFFLINE
-                    ? 'bg-gray-50 border-gray-200'
-                    : 'bg-green-50 border-green-200'
-                }`}
+                className={`relative rounded-lg border-2 p-3 transition-all duration-200 hover:shadow-md ${config.cardBg} ${config.cardBorder}`}
               >
                 {/* 状态指示点 */}
-                <div className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${config.bgColor} animate-pulse`}></div>
+                <div className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${config.bgColor} ${config.pulse ? 'animate-pulse' : ''}`}></div>
 
                 {/* 桩位编号 */}
                 <div className="text-center mb-2">
@@ -110,12 +102,7 @@ const StationCard: React.FC<StationCardProps> = ({
                 {/* 状态 */}
                 <div className="flex flex-col items-center">
                   <span className={`text-2xl ${config.color}`}>{config.icon}</span>
-                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full mt-1 ${
-                    status === StationStatus.IDLE ? 'bg-green-200 text-green-700' :
-                    status === StationStatus.CHARGING ? 'bg-red-200 text-red-700' :
-                    status === StationStatus.ERROR ? 'bg-yellow-200 text-yellow-700' :
-                    'bg-gray-200 text-gray-600'
-                  }`}>
+                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full mt-1 ${config.badgeClass}`}>
                     {config.label}
                   </span>
                 </div>
@@ -141,4 +128,4 @@ const StationCard: React.FC<StationCardProps> = ({
     </div>
   );
 };
-export default React.memo(StationCard);
+export default React.memo(StationCard);

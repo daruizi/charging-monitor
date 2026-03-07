@@ -61,6 +61,10 @@ export const STATUS_CONFIG: Record<StationStatusType, {
   bgColor: string;
   icon: string;
   description: string;
+  cardBg: string;
+  cardBorder: string;
+  badgeClass: string;
+  pulse: boolean;
 }> = {
   [StationStatus.IDLE]: {
     label: '空闲',
@@ -68,6 +72,10 @@ export const STATUS_CONFIG: Record<StationStatusType, {
     bgColor: 'bg-green-500',
     icon: '●',
     description: '可用',
+    cardBg: 'bg-green-50',
+    cardBorder: 'border-green-200',
+    badgeClass: 'bg-green-200 text-green-700',
+    pulse: false,
   },
   [StationStatus.CHARGING]: {
     label: '充电中',
@@ -75,6 +83,10 @@ export const STATUS_CONFIG: Record<StationStatusType, {
     bgColor: 'bg-red-500',
     icon: '⚡',
     description: '占用',
+    cardBg: 'bg-red-50',
+    cardBorder: 'border-red-300',
+    badgeClass: 'bg-red-200 text-red-700',
+    pulse: true,
   },
   [StationStatus.ERROR]: {
     label: '故障',
@@ -82,6 +94,10 @@ export const STATUS_CONFIG: Record<StationStatusType, {
     bgColor: 'bg-yellow-500',
     icon: '!',
     description: '故障',
+    cardBg: 'bg-yellow-50',
+    cardBorder: 'border-yellow-300',
+    badgeClass: 'bg-yellow-200 text-yellow-700',
+    pulse: true,
   },
   [StationStatus.OFFLINE]: {
     label: '离线',
@@ -89,6 +105,10 @@ export const STATUS_CONFIG: Record<StationStatusType, {
     bgColor: 'bg-gray-400',
     icon: '○',
     description: '离线',
+    cardBg: 'bg-gray-50',
+    cardBorder: 'border-gray-200',
+    badgeClass: 'bg-gray-200 text-gray-600',
+    pulse: false,
   },
   [StationStatus.UNKNOWN]: {
     label: '未知',
@@ -96,6 +116,10 @@ export const STATUS_CONFIG: Record<StationStatusType, {
     bgColor: 'bg-blue-400',
     icon: '?',
     description: '未知',
+    cardBg: 'bg-gray-50',
+    cardBorder: 'border-gray-200',
+    badgeClass: 'bg-gray-200 text-gray-600',
+    pulse: false,
   },
 };
 

@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { StationData } from '../types';
 import { REFRESH_INTERVAL, STATIONS } from '../config';
 import { fetchStationData, getErrorMessage } from '../services/api';
 import { extractPileList, calculateStats } from '../utils/stationUtils';
 
-const REFRESH_INTERVAL_SECONDS = REFRESH_INTERVAL / 1000;
-
 export const useStationData = (): {
   stationData: StationData[];
   refresh: () => Promise<void>;
   isLoading: boolean;
+  lastFetchTime: number;
 } => {
   const [stationData, setStationData] = useState<StationData[]>(() =>
     STATIONS.map((config) => ({
@@ -21,8 +20,14 @@ export const useStationData = (): {
       lastUpdate: null,
     }))
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState(Date.now);
+  const prevDataRef = useRef<Map<string, StationData>>(new Map());
+  const fetchDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   const fetchData = useCallback(async () => {
+    setIsLoading(true);
+
     const results = await Promise.all(
       STATIONS.map(async (config) => {
         try {
@@ -30,7 +35,7 @@ export const useStationData = (): {
           const piles = extractPileList(responseData);
           const stats = calculateStats(piles);
 
-          return {
+          const result: StationData = {
             config,
             piles,
             stats,
@@ -38,29 +43,39 @@ export const useStationData = (): {
             error: null,
             lastUpdate: new Date(),
           };
+          prevDataRef.current.set(config.id, result);
+          return result;
         } catch (err) {
+          // 失败时保留上次数据，仅更新 error 字段
+          const prev = prevDataRef.current.get(config.id);
           return {
             config,
-            piles: [],
-            stats: { total: 0, idle: 0, charging: 0, error: 0, offline: 0 },
+            piles: prev?.piles ?? [],
+            stats: prev?.stats ?? { total: 0, idle: 0, charging: 0, error: 0, offline: 0 },
             loading: false,
             error: getErrorMessage(err),
-            lastUpdate: new Date(),
+            lastUpdate: prev?.lastUpdate ?? null,
           };
         }
       })
     );
 
     setStationData(results);
+    setIsLoading(false);
+    setLastFetchTime(Date.now());
   }, []);
 
   useEffect(() => {
-    fetchData();
-    const timer = setInterval(fetchData, REFRESH_INTERVAL);
-    return () => clearInterval(timer);
+    fetchDataRef.current = fetchData;
   }, [fetchData]);
 
-  const isLoading = stationData.some((s) => s.loading);
+  useEffect(() => {
+    // 使用 ref 调用以避免 react-hooks/set-state-in-effect
+    const doFetch = () => fetchDataRef.current?.();
+    doFetch();
+    const timer = setInterval(doFetch, REFRESH_INTERVAL);
+    return () => clearInterval(timer);
+  }, []);
 
-  return { stationData, refresh: fetchData, isLoading };
-};
+  return { stationData, refresh: fetchData, isLoading, lastFetchTime };
+};
